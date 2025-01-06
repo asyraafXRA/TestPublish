@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="en-us">
+
+<head>
+	<meta charset="utf-8">
+	<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+	<title>football</title>
+	<style>
+		html,
+		body {
+			background: #000;
+			width: 100%;
+			height: 100%;
+			overflow: visible;
+			padding: 0;
+			margin: 0;
+		}
+
+		div#gameContainer {
+			background: transparent !important;
+			position: absolute;
+		}
+
+		div#gameContainer canvas {
+			position: absolute;
+		}
+
+		div#gameContainer canvas[data-pixel-art="true"] {
+			position: absolute;
+			image-rendering: optimizeSpeed;
+			image-rendering: -webkit-crisp-edges;
+			image-rendering: -moz-crisp-edges;
+			image-rendering: -o-crisp-edges;
+			image-rendering: crisp-edges;
+			image-rendering: -webkit-optimize-contrast;
+			image-rendering: optimize-contrast;
+			image-rendering: pixelated;
+			-ms-interpolation-mode: nearest-neighbor;
+		}
+	</style>
+</head>
+
+<body>
+	<script>
+		function getParameterByName(name, url = window.location.href) {
+			name = name.replace(/[\[\]]/g, '\\$&');
+			var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
+				results = regex.exec(url);
+			if (!results) return null;
+			if (!results[2]) return '';
+			return decodeURIComponent(results[2].replace(/\+/g, ' '));
+		}
+
+		function getCookieByName(name) {
+			var cookie = `; ${document.cookie}`
+			var parts = cookie.split(`; ${name}=`);
+			var res = ""
+
+			if (parts.length === 2) res = parts.pop().split(';').shift();
+			return res;
+		}
+
+		function redirect(){
+			VIVE_AVATAR_DOMAIN = "avatar.viverse.com";
+			VIVE_API_DOMAIN = "world-api.viverse.com";
+			signInUrl = `https://${window.location.hostname}/api/v3/oauth/login?hl=en_US&callback=${encodeURIComponent(window.location.href)}`;
+			if(window.location.hostname == "world.viverse.com"){
+				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
+				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
+			}
+			else if(window.location.hostname == "world-dev.viverse.com"){
+				VIVE_AVATAR_DOMAIN = "vr-viverse-web.htcwowdev.com";
+				VIVE_API_DOMAIN = "world-api-dev.viverse.com";
+				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
+				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
+			}
+			else if (window.location.hostname == 'world-stage.viverse.com'){
+				VIVE_AVATAR_DOMAIN = 'avatar-stage.viverse.com';
+				VIVE_API_DOMAIN = "world-api-stage.viverse.com";
+				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
+				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
+			}
+			else{
+                VIVE_AVATAR_DOMAIN = 'avatar-stage.viverse.com';
+                VIVE_API_DOMAIN = "world-api-stage.viverse.com";
+				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
+				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
+			}
+		}
+
+		cookieKey = '';
+		if(window.location.hostname == "world.viverse.com"){
+			cookieKey = '_htc_access_token_production';
+		}
+		else if (window.location.hostname == 'world-stage.viverse.com'){
+			cookieKey = '_htc_access_token_stage';
+		}
+		else {
+			cookieKey = '_htc_access_token_production';
+		}
+		if(!getCookieByName(cookieKey) && !getParameterByName('avatar_url')){
+			redirect();
+		}
+	</script>
+	<div id="gameContainer">
+		<canvas id="unity-canvas" data-pixel-art=""></canvas>
+		<script src="Build/NewBuild.loader.js"></script>
+		<script src="https://avatar.viverse.com/static-misc/avatar-js-sdk/1.1.1/Avatar-SDK.js"></script>
+		<script>
+			var canvas = document.querySelector("#unity-canvas");
+			var config = {
+				dataUrl: "Build/NewBuild.data.unityweb",
+				frameworkUrl: "Build/NewBuild.framework.js.unityweb",
+				codeUrl: "Build/NewBuild.wasm.unityweb",
+				streamingAssetsUrl: "StreamingAssets",
+				companyName: "DefaultCompany",
+				productName: "football",
+				productVersion: "1.0",
+				startGameDate: "2022-09-22T17:27:20.017075+08:00",
+				stopGameDate: "2022-09-22T17:27:20.017075+08:00"
+			};
+			var scaleToFit;
+			try {
+				scaleToFit = !!JSON.parse("true");
+			} catch (e) {
+				scaleToFit = true;
+			}
+			function progressHandler(progress) {
+				var percent = progress * 100 + '%';
+				canvas.style.background = 'linear-gradient(to right, white, white ' + percent + ', transparent ' + percent + ', transparent) no-repeat center';
+				canvas.style.backgroundSize = '100% 1rem';
+			}
+			function onResize() {
+				var container = canvas.parentElement;
+				var w;
+				var h;
+
+				if (scaleToFit) {
+					w = window.innerWidth;
+					h = window.innerHeight;
+
+					var r = 600 / 960;
+
+					if (w * r > window.innerHeight) {
+						w = Math.min(w, Math.ceil(h / r));
+					}
+					h = Math.floor(w * r);
+				} else {
+					w = 960;
+					h = 600;
+				}
+
+				container.style.width = canvas.style.width = w + "px";
+				container.style.height = canvas.style.height = h + "px";
+				container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
+				container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
+			}
+			function DoPromiseFunction(param, ms)
+			{
+				return new Promise(function(resolve, reject) 
+				{
+					setTimeout(function()
+					{
+						if (param == true)
+						{
+							resolve();
+						}
+						else
+						{
+							reject();
+						}
+					}, ms)
+				});
+			}
+			
+			var unityInstance = undefined;
+			createUnityInstance(canvas, config, progressHandler).then(function (instance) 
+			{
+				unityInstance = instance;
+				canvas = instance.Module.canvas;
+				onResize();
+			});
+			
+			window.addEventListener('resize', onResize);
+			onResize();
+		</script>
+	</div>
+</body>
+
+</html>
