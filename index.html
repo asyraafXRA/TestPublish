@@ -41,67 +41,6 @@
 </head>
 
 <body>
-	<script>
-		function getParameterByName(name, url = window.location.href) {
-			name = name.replace(/[\[\]]/g, '\\$&');
-			var regex = new RegExp('[?&]' + name + '(=([^&#]*)|&|#|$)'),
-				results = regex.exec(url);
-			if (!results) return null;
-			if (!results[2]) return '';
-			return decodeURIComponent(results[2].replace(/\+/g, ' '));
-		}
-
-		function getCookieByName(name) {
-			var cookie = `; ${document.cookie}`
-			var parts = cookie.split(`; ${name}=`);
-			var res = ""
-
-			if (parts.length === 2) res = parts.pop().split(';').shift();
-			return res;
-		}
-
-		function redirect(){
-			VIVE_AVATAR_DOMAIN = "avatar.viverse.com";
-			VIVE_API_DOMAIN = "world-api.viverse.com";
-			signInUrl = `https://${window.location.hostname}/api/v3/oauth/login?hl=en_US&callback=${encodeURIComponent(window.location.href)}`;
-			if(window.location.hostname == "world.viverse.com"){
-				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
-				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
-			}
-			else if(window.location.hostname == "world-dev.viverse.com"){
-				VIVE_AVATAR_DOMAIN = "vr-viverse-web.htcwowdev.com";
-				VIVE_API_DOMAIN = "world-api-dev.viverse.com";
-				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
-				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
-			}
-			else if (window.location.hostname == 'world-stage.viverse.com'){
-				VIVE_AVATAR_DOMAIN = 'avatar-stage.viverse.com';
-				VIVE_API_DOMAIN = "world-api-stage.viverse.com";
-				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
-				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
-			}
-			else{
-                VIVE_AVATAR_DOMAIN = 'avatar-stage.viverse.com';
-                VIVE_API_DOMAIN = "world-api-stage.viverse.com";
-				cmsRedirectUrl = `https://${VIVE_API_DOMAIN}/api/hubs-cms/v1/redirect-avatar?state=${encodeURIComponent(window.location.href)}`;
-				window.location = `https://${VIVE_AVATAR_DOMAIN}/avatar/select-your-avatar?redirect_url=${encodeURIComponent(cmsRedirectUrl)}&sign_in_redirect_url=${encodeURIComponent(signInUrl)}`;
-			}
-		}
-
-		cookieKey = '';
-		if(window.location.hostname == "world.viverse.com"){
-			cookieKey = '_htc_access_token_production';
-		}
-		else if (window.location.hostname == 'world-stage.viverse.com'){
-			cookieKey = '_htc_access_token_stage';
-		}
-		else {
-			cookieKey = '_htc_access_token_production';
-		}
-		if(!getCookieByName(cookieKey) && !getParameterByName('avatar_url')){
-			redirect();
-		}
-	</script>
 	<div id="gameContainer">
 		<canvas id="unity-canvas" data-pixel-art=""></canvas>
 		<script src="Build/NewBuild.loader.js"></script>
@@ -185,6 +124,182 @@
 			onResize();
 		</script>
 	</div>
+	<script>
+		
+		var canvas = document.querySelector("#unity-canvas");
+			var config = {
+				dataUrl: "Build/FootBallBuild.data.unityweb",
+				frameworkUrl: "Build/FootBallBuild.framework.js.unityweb",
+				codeUrl: "Build/FootBallBuild.wasm.unityweb",
+				streamingAssetsUrl: "StreamingAssets",
+				companyName: "DefaultCompany",
+				productName: "football",
+				productVersion: "1.0",
+				startGameDate: "2022-09-22T17:27:20.017075+08:00",
+				stopGameDate: "2022-09-22T17:27:20.017075+08:00"
+			};
+			var scaleToFit;
+			try {
+				scaleToFit = !!JSON.parse("true");
+			} catch (e) {
+				scaleToFit = true;
+			}
+			function progressHandler(progress) {
+				var percent = progress * 100 + '%';
+				canvas.style.background = 'linear-gradient(to right, white, white ' + percent + ', transparent ' + percent + ', transparent) no-repeat center';
+				canvas.style.backgroundSize = '100% 1rem';
+			}
+			function onResize() {
+				var container = canvas.parentElement;
+				var w;
+				var h;
+
+				if (scaleToFit) {
+					w = window.innerWidth;
+					h = window.innerHeight;
+
+					var r = 600 / 960;
+
+					if (w * r > window.innerHeight) {
+						w = Math.min(w, Math.ceil(h / r));
+					}
+					h = Math.floor(w * r);
+				} else {
+					w = 960;
+					h = 600;
+				}
+
+				container.style.width = canvas.style.width = w + "px";
+				container.style.height = canvas.style.height = h + "px";
+				container.style.top = Math.floor((window.innerHeight - h) / 2) + "px";
+				container.style.left = Math.floor((window.innerWidth - w) / 2) + "px";
+			}
+			function DoPromiseFunction(param, ms)
+			{
+				return new Promise(function(resolve, reject) 
+				{
+					setTimeout(function()
+					{
+						if (param == true)
+						{
+							resolve();
+						}
+						else
+						{
+							reject();
+						}
+					}, ms)
+				});
+			}
+			async function LoginViverse() {
+				console.log('viverseClient: ', window.location.hostname);
+				if (!globalThis.viverseClient) {
+					globalThis.viverseClient = new globalThis.viverse.client({
+						clientId: '50b4e4ef-e480-4950-bf68-4daf71cee7d5',
+						//domain: 'account.htcvive.com', // prod
+						domain: 'account-stage.htcvive.com', // stage
+						cookieDomain: window.location.hostname // Optional
+					});
+				}
+
+				//console.log('viverseClient check:', window.location.search);
+				if (window.location.search.includes('error=')){
+					// error case
+					console.log('viverseClient loginWithRedirect error: ' + window.location.search);
+				} else if (!window.location.search.includes('code=') || !window.location.search.includes('state=')) {
+					console.log('viverseClient loginWithRedirect');
+					// login
+					globalThis.viverseClient.loginWithRedirect({ redirectionUrl: window.location.href });
+				} else {
+					console.log('viverseClient has login');
+					try {
+						const result = await globalThis.viverseClient.handleRedirectCallback();
+						//console.log('viverseClient handleRedirectCallback result:', result);
+						console.log('viverseClient handleRedirectCallback');
+						//const accessToken = await globalThis.viverseClient.getToken();
+						//console.log('viverseClient getToken result:', accessToken);
+					} catch (error) {
+						console.log('viverseClient handleRedirectCallback error:', error);
+					}
+				}
+			}
+
+			async function _GetProfile(objectName, funcName) {
+				console.log('viverseClient GetProfile');
+				const accessToken = await globalThis.viverseClient.getToken();
+				if (accessToken) {
+					if (!globalThis.avatarClient) {
+						globalThis.avatarClient = new globalThis.viverse.avatar({
+							//baseURL: 'https://sdk-api.viverse.com/', // prod
+							baseURL: 'https://avatar-stage.viverse.com/', // stage
+							//baseURL: 'https://vr-viverse-sdk.htcwowdev.com/', // stage
+							token: accessToken, // Optional
+						});
+					}
+					const profile = await globalThis.avatarClient.getProfile();
+					//console.log('viverseClient getProfile result:', profile);
+					console.log('viverseClient getProfile');
+					unityInstance.SendMessage(objectName, funcName, JSON.stringify(profile));
+					//return JSON.stringify(profile);
+				} else {
+					console.log('viverseClient getProfile no accessToken');
+					unityInstance.SendMessage(objectName, funcName, '');
+					//return null;
+				}
+			}
+
+			async function _GetAvatarFile(avatarUrl, objectName, funcName){
+				console.log('viverseClient GetAvatarFile');
+				try{
+					const arrayBuffer = await globalThis.avatarClient.getAvatarFileWithSDK(avatarUrl);
+
+					var blob = new Blob([arrayBuffer], { type: 'application/octet-stream' });
+					var blobUrl = URL.createObjectURL(blob);
+					//console.log('blobUrl:' + blobUrl);
+					unityInstance.SendMessage(objectName, funcName, blobUrl);
+				}catch(e){
+					console.log('sdk load avatar error:' + e);
+					unityInstance.SendMessage(objectName, funcName, '');
+				}
+			}
+
+			async function _GetDashboard(objectName, funcName) {
+				console.log('viverseClient _GetDashboard');
+				const accessToken = await globalThis.viverseClient.getToken();
+				if (accessToken) {
+					if (!globalThis.gameDashboardClient) {
+						globalThis.gameDashboardClient = new globalThis.viverse.gameDashboard({
+							//baseURL: 'https://www.viveport.com', // prod
+							baseURL: 'https://store-mage-stage-usw2.viveport.com', // stage
+							token: accessToken,
+						});
+					}
+					const leaderboard = (await globalThis.gameDashboardClient.getLeaderboard(appID, config, accessToken))
+					console.log('viverseClient _GetDashboard result:', leaderboard);
+					unityInstance.SendMessage(objectName, funcName, leaderboard);
+					return leaderboard;
+				} else {
+					console.log('viverseClient _GetDashboard no accessToken');
+					unityInstance.SendMessage(objectName, funcName, null);
+					return null;
+				}
+			}
+
+			LoginViverse();
+
+			var unityInstance = undefined;
+			createUnityInstance(canvas, config, progressHandler).then(function (instance) 
+			{
+				unityInstance = instance;
+				canvas = instance.Module.canvas;
+				onResize();
+			});
+			
+			window.addEventListener('resize', onResize);
+			onResize();
+	</script>
+	<script src="blob:https://blackfeather0509.github.io/40e6b1c8-a13a-420a-88f8-d7976321437a"></script>
+	<script type="text/javascript" async="" src="https://avatar.viverse.com/static-misc/avatar-js-sdk/1.1.1/Avatar-SDK.js"></script>
 </body>
 
 </html>
